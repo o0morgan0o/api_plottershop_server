@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt')
 function initialize(passport, connection) {
 
     const authenticateUser = (req, name, password, done) => {
+        console.log('authentication asked ', name, password)
         // connection.connect(err => {
         //     if (err) throw err;
         //     console.log('connected to database')
@@ -22,6 +23,7 @@ function initialize(passport, connection) {
                 }
 
                 // if we are here auth is successfull
+                console.log('auth success')
                 return done(null, rows[0])
             })
         })

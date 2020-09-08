@@ -7,14 +7,17 @@ const basicAuth = require('express-basic-auth')
 const bodyParser = require('body-parser')
 const bcrypt = require('bcrypt')
 const flash = require('express-flash')
+const cookieParser = require('cookie-parser')
+const session = require('express-session')
+const cors = require('cors')
 
+const app = express()
 dotenv.config()
-const expressSession = require('express-session')({
-    secret: process.env.SESSION_SECRET, // TODO make this env
-    resave: false,
-    saveUninitialized: false
-})
+//TODO investigate on mysql security queries
 
+
+// ------------------------
+// Connect to Mysql
 const connection = mysql.createConnection({
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
@@ -24,40 +27,49 @@ const connection = mysql.createConnection({
 })
 connection.connect()
 
+// ------------------------
+// Middleware
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(cors({
+    origin: "http://37.187.120.211:3000",
+    credentials: true
+}))
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: true,
+    saveUninitialized: true
+}))
+app.use(flash())
+
+
+
+// -------------------------
+// Passport
 const initializePassport = require('./passport-config')
 initializePassport(
     passport,
     connection
 )
-
-
-const cors = require('cors')
-
-const app = express()
-
-app.use(express.urlencoded({ extended: false }))
-app.use(flash())
-app.use(expressSession)
-
 app.use(passport.initialize())
 app.use(passport.session())
 
-function loggedIn(req, res, next) {
-    if (req.user) {
-        next();
-    } else {
-        res.redirect('/login')
-    }
 
+function loggedIn(req, res, next) {
+    // console.log("in login ", req.user, req.session)
+    if (req.user) { next(); }
+    else {
+        // res.redirect('/login')
+        res.send('nothin')
+    }
 }
 
 
-app.get('/admin', cors(), loggedIn, (req, res) => {
+// Routes
+app.get('/admin', loggedIn, (req, res) => {
     connection.query('select * from items', (err, result) => {
-
         if (err) throw err
-
-        res.send(result)
+        res.send('Welcom ' + req.user.name)
     })
 
 })
@@ -68,30 +80,94 @@ app.get('/', (req, res) => {
 
 app.get('/login', (req, res) => {
     req.flash('messge', 'this is a message')
-    res.send('nope')
 })
 
-app.post('/login', passport.authenticate('local-login', {
-    successRedirect: '/admin',
-    failureRedirect: '/login',
-    failureFlash: true
-}))
-
-app.post('/')
-
-
-
-
-
-app.get('/api/getItems', (req, res) => {
-    const items = [
-        { id: 1, title: 'test', description: 'myadsjfaklsdjf' },
-        { id: 1, title: 'test', description: 'myadsjfaklsdjf' },
-        { id: 1, title: 'test', description: 'myadsjfaklsdjf' },
-        { id: 1, title: 'test', description: 'myadsjfaklsdjf' },
-    ]
-    return res.json(items)
+app.get('/user', (req, res) => {
+    res.send(req.user)
 })
+
+app.post('/login', (req, res, next) => {
+    passport.authenticate('local-login', function (err, user, info) {
+        if (err) throw err
+        if (!user) res.send('no user exist')
+        else {
+            req.logIn(user, err => {
+                if (err) throw err
+                res.send(req.user)
+
+                // res.redirect('/admin')
+            })
+        }
+    })(req, res, next)
+})
+
+
+app.post('/test', (req, res) => {
+    console.log('detected')
+    res.send('ok')
+})
+
+app.get('/user', (req, res) => {
+    res.send(req.user)
+})
+
+app.get('/endsession', (req, res) => {
+    req.session.regenerate(err => {
+        if (err) throw err
+        res.send('successfully end session')
+    })
+})
+
+
+
+
+
+app.get('/api/items', (req, res) => {
+    console.log("call detected")
+    //public route should be accessible for anybody 
+    connection.query('select * from items', (err, results) => {
+        if (err) throw err
+        res.send(results)
+    })
+})
+
+app.get('/api/item/:id', (req, res) => {
+    connection.query("select * from items where id='" + req.params.id + "'", (err, results) => {
+        if (err) throw err
+        if (results[0])
+            res.send(results[0])
+        else res.send("404")
+
+    })
+})
+
+// ADD A ITEM
+app.post('/api/items', (req, res) => { //TODO protect route if not dev
+    // app.post('/api/items', loggedIn, (req, res) => {
+    connection.query("insert into items( title, description,tags, main_pic,other_pic) VALUES ('aa', 'aa', 'tt', 'tt', 'tt')", (err, results) => {
+        if (err) throw err
+        console.log(results.insertId)
+        res.send('done')
+    })
+})
+
+app.get('/api/deleteitem/:id', (req, res) => {
+    connection.query("delete from items where id='" + req.params.id + "'", (err, results) => {
+        if (err) throw err
+        console.log(results)
+        res.redirect('/api/items')
+    })
+})
+
+app.get('/api/updateitem/:id', (req, res) => {
+    let newTitle = 'updated'
+    connection.query(`UPDATE items set title='${newTitle}' where id=${req.params.id}`, (err, results) => {
+        if (err) throw err
+        console.log(results)
+        res.redirect('/api/items')
+    })
+})
+
 
 
 const port = process.env.PORT || 4444
