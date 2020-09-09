@@ -71,7 +71,6 @@ app.get('/admin', loggedIn, (req, res) => {
         if (err) throw err
         res.send('Welcom ' + req.user.name)
     })
-
 })
 
 app.get('/', (req, res) => {
@@ -94,12 +93,30 @@ app.post('/login', (req, res, next) => {
             req.logIn(user, err => {
                 if (err) throw err
                 res.send(req.user)
-
                 // res.redirect('/admin')
             })
         }
     })(req, res, next)
 })
+
+app.post('/admin/additem', (req, res) => {
+    const item = req.body.item
+    const query = `insert into items( title, subtitle,description_1, description_2,img_main, img_others, size, devise, viewable, sold, promotion) 
+    VALUES ('${item.title}', '${item.subtitle}','${item.description_1}', '${item.description_2}','${item.img_main}', '${item.img_others}',
+        '${item.size}', '${item.devise}' , ${item.viewable} , ${item.sold}, '${item.promotion}')`
+
+    connection.query(query, (err, results) => {
+        if (err) throw err
+        console.log(results.insertId)
+        if (results.insertId)
+            res.send('INSERT SUCCESS')
+        else {
+            res.send("INSERT ERROR")
+        }
+
+    })
+})
+
 
 
 app.post('/test', (req, res) => {
@@ -161,7 +178,7 @@ app.get('/api/deleteitem/:id', (req, res) => {
 
 app.get('/api/updateitem/:id', (req, res) => {
     let newTitle = 'updated'
-    connection.query(`UPDATE items set title='${newTitle}' where id=${req.params.id}`, (err, results) => {
+    connection.query(`UPDATE items set title = '${newTitle}' where id = ${req.params.id}`, (err, results) => {
         if (err) throw err
         console.log(results)
         res.redirect('/api/items')
