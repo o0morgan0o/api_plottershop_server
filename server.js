@@ -52,7 +52,7 @@ app.use(passport.session())
 
 
 // -------------- ROUTES ------------------
-require('./routes')(app, connection)
+require('./routes')(app, connection, passport)
 
 
 
