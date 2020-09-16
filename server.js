@@ -1,4 +1,5 @@
 const dotenv = require('dotenv')
+const fs = require('fs')
 const express = require('express')
 const mysql = require('mysql')
 const passport = require('passport')
@@ -9,10 +10,13 @@ const bcrypt = require('bcrypt')
 const flash = require('express-flash')
 const session = require('express-session')
 const cors = require('cors')
+const https = require('https')
 
 const app = express()
 dotenv.config()
 //TODO investigate on mysql security queries
+
+// TODO make https (must be made with nginx and proxy)
 
 // ------------------------
 // Connect to Mysql
@@ -30,7 +34,8 @@ connection.connect()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cors({
-    origin: "http://37.187.120.211:3000",
+    // origin: `http://${process.env.SERVER_IP}:3000`,
+    origin: `https://mroze-printings.com`,
     credentials: true
 }))
 app.use(session({
@@ -56,5 +61,7 @@ require('./routes')(app, connection, passport)
 
 
 
+
 const port = process.env.PORT || 4444
-app.listen(port, process.env.SERVER_IP, () => console.log(`listening on port ${port}`))
+// app.listen(port, process.env.SERVER_IP, () => console.log(`listening on port ${port}`))
+app.listen(port, () => console.log(`listening on local host, port ${port}`))

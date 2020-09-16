@@ -4,13 +4,13 @@ module.exports = function (app, connection, passport) {
     function loggedIn(req, res, next) {
         console.log("in login ")
         if (req.user) {
-            console.log("server auth: ", req.user)
+            console.log("authenticated")
             next();
         }
         else {
             // res.redirect('/login')
             console.log('no auth')
-            res.send('nothin')
+            res.redirect('/')
         }
     }
 
@@ -18,12 +18,21 @@ module.exports = function (app, connection, passport) {
     app.get('/admin', loggedIn, (req, res) => {
         connection.query('select * from items', (err, result) => {
             if (err) throw err
-            res.send('Welcom ' + req.user.name)
+            res.send('Welcome ' + req.user.name)
         })
     })
 
-    app.post('/admin/additem', loggedIn, upload.array('files'), (req, res, next) => {
+    app.get('/', (req, res) => {
+        res.send('nothing')
+    })
+
+    app.post('/test', loggedIn, (req, res) => {
+        res.send('success')
+    })
+
+    app.post('/admin/additem', loggedIn, upload.array('files'), (req, res, next) => { // TODO rajouter login
         let item = req.body
+        console.log('receiveing ... ', item)
         try {
             let files = req.files
             console.log('uploaded files : ', files)
@@ -77,6 +86,7 @@ module.exports = function (app, connection, passport) {
 
     app.get('/login', (req, res) => {
         req.flash('messge', 'this is a message')
+        res.send('received...')
     })
 
     app.get('/user', (req, res) => {
@@ -108,10 +118,15 @@ module.exports = function (app, connection, passport) {
     })
 
     app.get('/endsession', (req, res) => {
-        req.session.regenerate(err => {
-            if (err) throw err
-            res.send('successfully end session')
-        })
+        console.log('should end sesssion and redirect')
+        // req.logout()
+        // res.redirect('/')
+        console.log('aaa')
+        res.send('404')
+        // req.session.regenerate(err => {
+        //     if (err) throw err
+        //     res.send('successfully end session')
+        // })
     })
 
 
@@ -154,6 +169,11 @@ module.exports = function (app, connection, passport) {
     //         res.redirect('/api/items')
     //     })
     // })
+    app.get('*', (req, res) => {
+
+        console.log('unknow request', req.body)
+        res.send('unknow address')
+    })
 
 
 }

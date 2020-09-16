@@ -18,7 +18,12 @@ function initialize(passport, connection) {
                     return done(null, false, req.flash('loginMessage', 'No user found'))
                 }
 
+                console.log('comparing passwords now')
+                const passwordToCheck = rows[0].password
+
                 if (!(rows[0].password == password)) {
+                    // if (!(bcrypt.compareSync(password, passwordToCheck))) {
+                    console.log('wrong password')
                     return done(null, false, req.flash('loginMessage', 'Opps wrong password'))
                 }
 
