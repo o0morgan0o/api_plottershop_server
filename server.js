@@ -43,6 +43,10 @@ app.use(session({
     resave: true,
     saveUninitialized: true
 }))
+app.use((req, res, next) => {
+    res.locals.user = req.user
+    next()
+})
 app.use(flash())
 app.use(express.static('uploads'))
 

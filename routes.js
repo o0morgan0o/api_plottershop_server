@@ -63,6 +63,24 @@ module.exports = function (app, connection, passport) {
         }
     })
 
+    app.post('/admin/deleteitem/:id', (req, res, next) => {
+        // TODO try to delete also the pictures maybe
+        // TODO make login for production
+        // try{
+        let item = req.body
+        if (item.id !== req.params.id) {
+            console.log(item.id)
+            res.send("something went wrong, id don't match")
+            return
+        }
+        const query = `delete from items where id='${req.params.id}'`
+        connection.query(query, (err, results) => {
+            if (err) throw err
+            console.log(results)
+        })
+        res.send('delete detected')
+    })
+
     app.post('/api/updateitem/:id', upload.array('files'), (req, res, next) => {
         //TODO add upload + validation
         //get data
@@ -119,10 +137,10 @@ module.exports = function (app, connection, passport) {
 
     app.get('/endsession', (req, res) => {
         console.log('should end sesssion and redirect')
-        // req.logout()
+        req.logout()
         // res.redirect('/')
         console.log('aaa')
-        res.send('404')
+        res.redirect('/')
         // req.session.regenerate(err => {
         //     if (err) throw err
         //     res.send('successfully end session')
