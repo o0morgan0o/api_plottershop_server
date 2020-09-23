@@ -1,16 +1,16 @@
+const jwt = require('jsonwebtoken')
 const upload = require('./fileUpload').upload
 module.exports = function (app, connection, passport) {
 
     function loggedIn(req, res, next) {
-        console.log("in login ")
+        console.log("in login ", req.isAuthenticated())
         if (req.user) {
             console.log("authenticated")
             next();
         }
         else {
-            // res.redirect('/login')
-            console.log('no auth')
-            res.redirect('/')
+            console.log('fail')
+            res.send('You are not authenticated, Please login !')
         }
     }
 
@@ -22,11 +22,8 @@ module.exports = function (app, connection, passport) {
         })
     })
 
-    app.get('/', (req, res) => {
-        res.send('nothing')
-    })
 
-    app.post('/test', loggedIn, (req, res) => {
+    app.get('/test', loggedIn, (req, res) => {
         res.send('success')
     })
 
@@ -102,14 +99,8 @@ module.exports = function (app, connection, passport) {
 
 
 
-    app.get('/login', (req, res) => {
-        req.flash('messge', 'this is a message')
-        res.send('received...')
-    })
 
-    app.get('/user', (req, res) => {
-        res.send(req.user)
-    })
+
 
     app.post('/login', (req, res, next) => {
         passport.authenticate('local-login', function (err, user, info) {
@@ -118,29 +109,32 @@ module.exports = function (app, connection, passport) {
             else {
                 req.logIn(user, err => {
                     if (err) throw err
-                    res.send(req.user)
-                    // res.redirect('/admin')
+                    // creation of a web token
+                    let token = jwt.sign({ data: user.name }, 'secret', { expiresIn: '1h' })
+                    // console.log(token)
+                    user.token = token
+
+                    res.send(user.name)
                 })
             }
+            console.log('should exist ', req.user)
+            console.log(req.isAuthenticated())
         })(req, res, next)
     })
-    // app.get('/admin/item/:id', loggedIn, (req, res))
 
 
 
-    // app.get('/admin/item/:id',)
-
-
-    app.get('/user', (req, res) => {
+    app.get('/user', loggedIn, (req, res) => {
+        console.log('receiving user request')
         res.send(req.user)
     })
 
-    app.get('/endsession', (req, res) => {
+    app.get('/logout', (req, res) => {
         console.log('should end sesssion and redirect')
         req.logout()
         // res.redirect('/')
         console.log('aaa')
-        res.redirect('/')
+        res.send("LOGGED OUT")
         // req.session.regenerate(err => {
         //     if (err) throw err
         //     res.send('successfully end session')
@@ -165,7 +159,7 @@ module.exports = function (app, connection, passport) {
             if (err) throw err
             if (results[0])
                 res.send(results[0])
-            else res.send("404")
+            else res.send("Non existing item")
 
         })
     })
@@ -190,7 +184,7 @@ module.exports = function (app, connection, passport) {
     app.get('*', (req, res) => {
 
         console.log('unknow request', req.body)
-        res.send('unknow address')
+        res.send('unknown address')
     })
 
 

@@ -31,13 +31,25 @@ connection.connect()
 // END MYSQL =====================
 
 // Middleware
+const whitelist = ['https://mroze-printings.com', 'https://mroze-printings.com/admin/additem']
+let corsOptions = {
+    origin: function (origin, cb) {
+        if (whitelist.indexOf(origin) !== -1 || !origin) {
+            cb(null, true)
+        } else {
+            // cb(new Error('not allowed by CORS'))
+        }
+    },
+    credentials: true
+}
+app.use(cors(corsOptions))
+// app.use(cors({
+//     origin: `https://mroze-printings.com`,
+//     credentials: true
+// }))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
-app.use(cors({
-    // origin: `http://${process.env.SERVER_IP}:3000`,
-    origin: `https://mroze-printings.com`,
-    credentials: true
-}))
+
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: true,
@@ -69,3 +81,5 @@ require('./routes')(app, connection, passport)
 const port = process.env.PORT || 4444
 // app.listen(port, process.env.SERVER_IP, () => console.log(`listening on port ${port}`))
 app.listen(port, () => console.log(`listening on local host, port ${port}`))
+
+module.exports = app
