@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 const upload = require('./fileUpload').upload
+
 module.exports = function (app, connection, passport) {
 
     function loggedIn(req, res, next) {
@@ -104,8 +105,9 @@ module.exports = function (app, connection, passport) {
 
     app.post('/login', (req, res, next) => {
         passport.authenticate('local-login', function (err, user, info) {
+
             if (err) throw err
-            if (!user) res.send('no user exist')
+            if (!user) res.send('username or password incorrect !')
             else {
                 req.logIn(user, err => {
                     if (err) throw err
@@ -117,8 +119,8 @@ module.exports = function (app, connection, passport) {
                     res.send(user.name)
                 })
             }
-            console.log('should exist ', req.user)
-            console.log(req.isAuthenticated())
+            // console.log('should exist ', req.user)
+            // console.log(req.isAuthenticated())
         })(req, res, next)
     })
 

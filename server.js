@@ -21,7 +21,8 @@ dotenv.config()
 // ------------------------
 // Connect to Mysql
 const connection = mysql.createConnection({
-    database: process.env.DB_NAME,
+
+    database: (process.env.NODE_ENV ? process.env.DB_NAME : process.env.DB_TEST_NAME),
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -31,22 +32,43 @@ connection.connect()
 // END MYSQL =====================
 
 // Middleware
-const whitelist = ['https://mroze-printings.com', 'https://mroze-printings.com/admin/additem']
-let corsOptions = {
-    origin: function (origin, cb) {
-        if (whitelist.indexOf(origin) !== -1 || !origin) {
-            cb(null, true)
-        } else {
-            // cb(new Error('not allowed by CORS'))
-        }
-    },
-    credentials: true
-}
-app.use(cors(corsOptions))
+// let corsOptions = {
+//     origin: function (origin, cb) {
+//         if (whitelist.indexOf(origin) !== -1 || !origin) {
+//             cb(null, true)
+//         } else {
+//             // cb(new Error('not allowed by CORS'))
+//         }
+//     },
+//     credentials: true
+// }
+// app.use(cors(corsOptions))
 // app.use(cors({
 //     origin: `https://mroze-printings.com`,
 //     credentials: true
 // }))
+let myCors = function (req, res, next) {
+    const whitelist = ['https://mroze-printings.com', 'https://mroze-printings.com/admin/additem']
+    let origin = req.headers.origin
+    if (whitelist.indexOf(origin) > -1) {
+        res.setHeader('Access-Control-Allow-Origin', origin)
+    }
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
+    res.setHeader('Access-Control-Allow-Credentials', 'true')
+    next()
+
+}
+app.use(myCors)
+// app.use(cors())
+
+
+
+
+
+
+
+
+
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
@@ -73,7 +95,11 @@ app.use(passport.session())
 
 
 // -------------- ROUTES ------------------
-require('./routes')(app, connection, passport)
+// require('./routes')(app, connection, passport)
+require('./routes/publicRoutes')(app, connection)
+require('./routes/loginRoutes')(app, connection, passport)
+require('./routes/adminRoutes')(app, connection, passport)
+require('./routes/unknownRoute')(app)
 
 
 

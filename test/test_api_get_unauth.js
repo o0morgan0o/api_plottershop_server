@@ -7,6 +7,7 @@ let should = chai.should()
 const { expect } = chai
 
 
+
 chai.use(chaiHttp)
 
 describe('null test', () => {
@@ -59,7 +60,7 @@ describe('testing api routes without need auth', () => {
             .get('/api/nothing')
             .end((err, res) => {
                 expect(res).to.have.status(200)
-                expect(res.text).to.be.equal('unknown address')
+                expect(res.text).to.be.equal('unknown route')
                 done()
             })
     })
