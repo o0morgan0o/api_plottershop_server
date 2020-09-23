@@ -33,6 +33,17 @@ describe('test LOGIN with credits', () => {
                 done()
             })
     })
+
+    it('POST at /login with axios', (done) => {
+        Axios.post('http://localhost:4444/login', { name: 'root', password: '123456' })
+            .then(res => {
+                expect(res).to.have.status(200)
+                expect(res.data).to.be.equal('root')
+                done()
+            })
+            .catch(err => done(err))
+
+    })
 })
 
 describe('test LOGIN with credits and admin after', () => {
@@ -51,7 +62,24 @@ describe('test LOGIN with credits and admin after', () => {
                     })
             })
     })
+
+    it('POST at /login with axios', done => {
+        Axios.post('http://localhost:4444/login', { name: 'root', password: '123456' })
+            .then(res => {
+                let cookie = res.headers['set-cookie']
+                Axios.get('http://localhost:4444/admin', {
+                    headers: {
+                        Cookie: cookie
+                    }
+                }).then(res => {
+                    expect(res).to.have.status(200)
+                    expect(res.data).to.be.equal('Welcome root')
+                    done()
+                }).catch(err => done(err))
+            }).catch(err => done(err))
+    })
 })
+
 describe('test LOGOUT after Login', () => {
     it('POST at /login', (done) => {
         let agent = chai.request.agent(app)

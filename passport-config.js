@@ -16,14 +16,14 @@ function initialize(passport, connection) {
 
                 // if (!(rows[0].password == password)) {
                 const passwordToCheck = rows[0].password
-                console.log('comparing passwords now', passwordToCheck, password)
+                // console.log('comparing passwords now', passwordToCheck, password)
 
                 if (!(bcrypt.compareSync(password, passwordToCheck))) {
-                    console.log('wrong password')
+                    // console.log('wrong password')
                     return done(null, false, req.flash('loginMessage', 'Opps wrong password'))
                 }
                 // if we are here auth is successfull
-                console.log('auth success', rows[0])
+                // console.log('auth success', rows[0])
                 return done(null, rows[0])
             })
         })

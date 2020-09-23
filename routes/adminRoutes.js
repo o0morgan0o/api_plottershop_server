@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken')
 const upload = require('../fileUpload').upload
 const loggedIn = require('./login')
+const jwtLoggedIn = require('./jwtlogin')
+const multer = require('multer')
+const fs = require('fs')
+const path = require('path')
 
 module.exports = function (app, connection, passport) {
 
@@ -16,12 +20,14 @@ module.exports = function (app, connection, passport) {
 
     app.post('/admin/additem', loggedIn, upload.array('files'), (req, res, next) => { // TODO rajouter login
         let item = req.body
-        console.log('receiveing ... ', item)
+        // console.log('receiveing ... ', req.body)
         try {
+            console.log(req.files)
             let files = req.files
-            console.log('uploaded files : ', files)
+            // console.log('uploaded files : ', files)
             //construction of stringify array
             const img_main = files[0].filename
+            console.log('okkkkkkkkk')
             let img_others = []
             for (let i = 1; i < files.length - 1; i++) {
                 if (files[i]) {
@@ -32,28 +38,39 @@ module.exports = function (app, connection, passport) {
             const query = `insert into items( title, subtitle,description_1, description_2,img_main, img_others, size, devise, viewable, sold, promotion) 
             VALUES ('${item.title}', '${item.subtitle}','${item.description_1}', '${item.description_2}','${img_main}', '${img_others_json}',
             '${item.size}', '${item.devise}' , ${item.viewable} , ${item.sold}, '${item.promotion}')`
+            console.log(query)
             connection.query(query, (err, results) => {
+                let resultStatus = 'unknown'
                 if (err) throw err
                 console.log(results.insertId)
-                if (results.insertId)
+                if (results.insertId) {
+                    resultStatus = "success"
                     console.log('INSERT SUCCESS')
+                }
                 else {
+                    resultStatus = "error"
                     console.log("INSERT ERROR")
                 }
+                console.log(results)
+                res.json({
+                    status: resultStatus,
+                    id: results.insertId,
+                    affectedRows: results.affectedRows,
+                    warningCount: results.warningCount
+                })
             })
-            res.send(files)
         } catch (err) {
             res.send("Error during upload " + err)
         }
     })
 
-    app.post('/admin/deleteitem/:id', (req, res, next) => {
+    app.post('/admin/deleteitem/:id', loggedIn, (req, res, next) => {
         // TODO try to delete also the pictures maybe
         // TODO make login for production
         // try{
         let item = req.body
         if (item.id !== req.params.id) {
-            console.log(item.id)
+            // console.log(item.id)
             res.send("something went wrong, id don't match")
             return
         }
@@ -65,7 +82,7 @@ module.exports = function (app, connection, passport) {
         res.send('delete detected')
     })
 
-    app.post('/admin/updateitem/:id', upload.array('files'), (req, res, next) => {
+    app.post('/admin/updateitem/:id', loggedIn, upload.array('files'), (req, res, next) => {
         //TODO add upload + validation
         //get data
 
@@ -79,6 +96,24 @@ module.exports = function (app, connection, passport) {
             // console.log(results)
             res.redirect('/api/items')
         })
+
+
+    })
+    app.get('/admin/delete_test_file_uploads', loggedIn, (req, res, next) => {
+        console.log('triggeeeeeeer')
+        const directory = 'uploads_test'
+        fs.readdir(directory, (err, files) => {
+            if (err) throw err
+            for (const file of files) {
+                fs.unlink(path.join(directory, file), err => {
+                    if (err) throw err
+                })
+            }
+        })
+        res.send('deleted')
+
+
+
     })
 
 

@@ -65,10 +65,6 @@ app.use(myCors)
 
 
 
-
-
-
-
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
@@ -95,7 +91,6 @@ app.use(passport.session())
 
 
 // -------------- ROUTES ------------------
-// require('./routes')(app, connection, passport)
 require('./routes/publicRoutes')(app, connection)
 require('./routes/loginRoutes')(app, connection, passport)
 require('./routes/adminRoutes')(app, connection, passport)

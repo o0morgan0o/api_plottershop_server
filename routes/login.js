@@ -1,13 +1,13 @@
 
 
 module.exports = function (req, res, next) {
-    console.log("in login ", req.isAuthenticated())
+    // console.log("in login ", req.isAuthenticated())
     if (req.user) {
-        console.log("authenticated")
+        // console.log("authenticated")
         next();
     }
     else {
-        console.log('fail')
+        // console.log('fail')
         res.send('You are not authenticated, Please login !')
     }
 }

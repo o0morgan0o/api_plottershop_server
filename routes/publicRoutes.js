@@ -1,10 +1,9 @@
 
-
 module.exports = function (app, connection) {
 
 
     app.get('/api/items', (req, res) => {
-        console.log("call detected")
+        // console.log("call detected")
         //public route should be accessible for anybody 
         connection.query('select * from items', (err, results) => {
             if (err) throw err

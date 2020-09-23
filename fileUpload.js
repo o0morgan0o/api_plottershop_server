@@ -3,7 +3,12 @@ const multer = require('multer')
 
 const storage = multer.diskStorage({
     destination: (req, res, cb) => {
-        cb(null, './uploads')
+        console.log('okkkk')
+        if (process.env.NODE_ENV === "test") {
+            cb(null, './uploads_test')
+        } else {
+            cb(null, './uploads')
+        }
     },
     filename: (req, file, cb) => {
         console.log('almost')

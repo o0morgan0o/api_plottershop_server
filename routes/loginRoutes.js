@@ -25,15 +25,15 @@ module.exports = function (app, connection, passport) {
     })
 
     app.get('/user', loggedIn, (req, res) => {
-        console.log('receiving user request')
+        // console.log('receiving user request')
         res.send(req.user)
     })
 
     app.get('/logout', (req, res) => {
-        console.log('should end sesssion and redirect')
+        // console.log('should end sesssion and redirect')
         req.logout()
         // res.redirect('/')
-        console.log('aaa')
+        // console.log('aaa')
         res.send("LOGGED OUT")
         // req.session.regenerate(err => {
         //     if (err) throw err
