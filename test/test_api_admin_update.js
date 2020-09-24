@@ -41,13 +41,11 @@ describe('testing update items', () => {
         const resAdd = await Axios.post(`${BASE_URL}/admin/additem`, tmpAdd, { headers: getHeaderWithCookie(tmpAdd, cookie) })
         expect(resAdd).to.have.status(200)
         const insertedId = resAdd.data.id
-        console.log('check id', resAdd.data, insertedId)
         const resGetAfter = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
         expect(resGetAfter).to.have.status(200)
         let imgMainBefore = resGetAfter.data.img_main
         let imgOthersBefore = resGetAfter.data.img_others
         expect(JSON.parse(imgOthersBefore).length).to.be.equal(3)
-        console.log('result img', imgMainBefore, imgOthersBefore)
         const updateFormData = getNewFormData(title = "Updated title", subtitle = "Updated subtitle")
         updateFormData.append('id', insertedId)
         const resUpdate = await Axios.post(`${BASE_URL}/admin/updateitem`, updateFormData, { headers: getHeaderWithCookie(updateFormData, cookie) })
@@ -58,7 +56,6 @@ describe('testing update items', () => {
         expect(resCheck.data.subtitle).to.be.equal('Updated subtitle')
         expect(resCheck.data.img_main).to.be.equal(imgMainBefore)
         expect(resCheck.data.img_others).to.be.equal(imgOthersBefore)
-        console.log(resCheck.data)
 
     })
 
@@ -83,6 +80,8 @@ describe('testing update items', () => {
         const resUpdate = await Axios.post(`${BASE_URL}/admin/updateitem`, updateFormData, { headers: getHeaderWithCookie(updateFormData, cookie) })
         expect(resUpdate).to.have.status(200)
         expect(resUpdate.data.status).to.be.equal('success')
+        expect(resUpdate.data.removedElementMain.length).to.be.equal(1)
+        expect(chaiFiles.file(`./uploads_test/${imgMainBefore}`)).to.not.exist
         const resGetUpdated = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
         expect(resGetUpdated).to.have.status(200)
         expect(resGetUpdated.data.title).to.be.equal(itemBefore.title)
@@ -209,12 +208,19 @@ describe('testing update items', () => {
         const resUpdate = await Axios.post(`${BASE_URL}/admin/updateitem`, updateFormData, { headers: getHeaderWithCookie(updateFormData, cookie) })
         expect(resUpdate).to.have.status(200)
         expect(resUpdate.data.status).to.be.equal('success')
+        expect(resUpdate.data.removedElementsOthers.length).to.be.equal(3)
+        const removedElements = resUpdate.data.removedElementsOthers
+        expect(chaiFiles.file(`./uploads_test/${removedElements[0]}`)).to.not.exist
+        expect(chaiFiles.file(`./uploads_test/${removedElements[1]}`)).to.not.exist
+        expect(chaiFiles.file(`./uploads_test/${removedElements[2]}`)).to.not.exist
+
         const resGetUpdated = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
         expect(resGetUpdated).to.have.status(200)
         expect(resGetUpdated.data.id).to.be.equal(insertedId)
         expect(resGetUpdated.data.img_main).to.be.equal(itemBefore.img_main)
         expect(resGetUpdated.data.img_others).to.be.not.equal(itemBefore.img_others)
         expect(JSON.parse(resGetUpdated.data.img_others).length).to.be.equal(0)
+
     })
 
 })

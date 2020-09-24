@@ -4,64 +4,11 @@ const upload = require('../fileUpload').upload
 const loggedIn = require('./login')
 const fs = require('fs')
 const path = require('path')
-
-function getFilesFromRequest(reqFiles) {
-    let main = undefined
-    let others = []
-    try {
-        main = reqFiles['file_main'][0].filename
-    } catch (e) {
-        main = undefined
-    }
-    others = reqFiles['file_others']
-    if (others === undefined) others = []
-    console.log('AAAAAAAAAAAAAAAAAAAA return value', main, others)
-    return [main, others]
+const { getFilesFromRequest, deleteFilesOnServer, getFilesToRemove, concatPreviousAndNewImgOthers, removeImagesInImgOthers } = require('./helpers/updateFunctions')
 
 
-}
-
-function getFilesToRemove(filesToRemove) {
-    let response = []
-    if (filesToRemove === undefined) response = []
-    else response = filesToRemove
-    return response
-}
-
-function concatPreviousAndNewImgOthers(oldItem, newItem) {
-    let temp = JSON.parse(oldItem).concat(newItem)
-    // console.log('concattttttttt', oldItem, newItem, temp)
-    return temp
-}
-function removeImagesInImgOthers(arr, filesToRemove) {
-    let removedArray = []
-    if (filesToRemove === undefined) return [arr, removedArray]
-    if (Array.isArray(filesToRemove)) {
-        let newArr = [...arr]
-        for (let i = 0; i < filesToRemove.length; i++) {
-            let index = newArr.indexOf(filesToRemove[i])
-            if (index !== -1) {
-                removedArray.push(newArr[index])
-                newArr.splice(index, 1)
-            }
-        }
-        return [newArr, removedArray]
-
-    } else {
-        // case where the filesToRemove is not an array but a string
-        let newArr = [...arr]
-        let index = arr.indexOf(filesToRemove)
-        if (index !== -1) {
-            removedArray.push(newArr[index])
-            newArr.splice(index, 1)
-        }
-        return [newArr, removedArray]
-    }
-}
 
 module.exports = function (app, connection, passport) {
-
-
     // ADMIN Routes ===========================
     app.get('/admin', loggedIn, (req, res) => {
         connection.query('select * from items', (err, result) => {
@@ -120,18 +67,14 @@ module.exports = function (app, connection, passport) {
         let query = `select * from items where id='${req.params.id}'`
 
 
+        let files_to_delete = []
         connection.query(query, (err, results) => {
             if (err) throw err
-            let files_to_delete = []
             files_to_delete.push(results[0].img_main)
             for (let i = 0; i < results[0].img_others.length; i++) {
                 files_to_delete.push(results[0].img_others[i])
             }
-            for (let i = 0; i < files_to_delete.length; i++) {
-                try {
-                    fs.unlinkSync(`./uplaods_test/${files_to_delete[i]}`)
-                } catch (e) { err => console.log(err) }
-            }
+            // deleteFilesOnServer(files_to_delete)
         })
         query = `delete from items where id='${req.params.id}'`
         connection.query(query, (err, results) => {
@@ -140,6 +83,7 @@ module.exports = function (app, connection, passport) {
                 object.status = "success"
                 object.affectedRows = results.affectedRows
                 object.warningCount = results.warningCount
+                object.deleteFiles = files_to_delete
             }
             res.json(object)
         })
@@ -155,17 +99,14 @@ module.exports = function (app, connection, passport) {
         let [newFile_main, newFile_others] = getFilesFromRequest(req.files)
         let files_remove = getFilesToRemove(req.body.removeFile)
         let item = req.body
-        // console.log('item', item)
         // getItem(connection, item.id,)
         connection.query(`select * from items where id = '${item.id}'`, (err, results) => {
             if (err) throw err
             if (results[0]) {
                 const oldItem = results[0]
                 const arrayFileOthers = concatPreviousAndNewImgOthers(oldItem.img_others, newFile_others)
-                let [filteredArrayFileOthers, removedElements] = removeImagesInImgOthers(arrayFileOthers, files_remove)
+                let [filteredArrayFileOthers, removedElementsOthers] = removeImagesInImgOthers(arrayFileOthers, files_remove)
                 const img_others_json = JSON.stringify(filteredArrayFileOthers)
-
-                console.log('CCCCCCCCCCCC before query', newFile_main, img_others_json,)
 
 
                 // TODO change aloso pictures
@@ -188,15 +129,19 @@ module.exports = function (app, connection, passport) {
 
 
                 connection.query(query, (err, results) => {
-
                     if (err) throw err
-                    console.log(results)
+                    // console.log(results)
+                    if (newFile_main) deleteFilesOnServer([oldItem.img_main])
+                    deleteFilesOnServer(removedElementsOthers)
                     resultStatus = 'success'
                     res.json({
                         id: item.id,
                         affectedRows: results.affectedRows,
                         status: resultStatus,
-                        warningCount: results.warningCount
+                        warningCount: results.warningCount,
+                        removedElementsOthers: removedElementsOthers,
+                        removedElementMain: [oldItem.img_main]
+
                     })
                 })
             }
@@ -219,14 +164,7 @@ module.exports = function (app, connection, passport) {
             }
         })
         res.send('deleted')
-
-
-
     })
-
-
-
-
 }
 
 // async function getItem(connection, id, cb) {

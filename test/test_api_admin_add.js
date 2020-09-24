@@ -10,7 +10,7 @@ const FormData = require('form-data')
 const path = require('path')
 const fs = require('fs')
 const chaiFiles = require('chai-files')
-const { getNewFormData, getHeaderWithCookie } =require('./helpers/functions')
+const { getNewFormData, getHeaderWithCookie } = require('./helpers/functions')
 
 const BASE_URL = process.env.API_TEST_URL
 const credentials = {
@@ -46,7 +46,7 @@ describe('testing add delete update item', () => {
         expect(resGetAfter).to.have.status(200)
         const item = resGetAfter.data
         expect(item.title).to.be.equal('AddItem Title')
-        // expect(chaiFiles.file(`./uploads_test/${item.img_main}`)).to.exist
+        expect(chaiFiles.file(`./uploads_test/${item.img_main}`)).to.exist
     })
 
     it('DELETE at /admin/deleteitem', async () => {
