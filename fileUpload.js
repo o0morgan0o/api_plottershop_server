@@ -3,7 +3,6 @@ const multer = require('multer')
 
 const storage = multer.diskStorage({
     destination: (req, res, cb) => {
-        console.log('okkkk')
         if (process.env.NODE_ENV === "test") {
             cb(null, './uploads_test')
         } else {
@@ -11,7 +10,6 @@ const storage = multer.diskStorage({
         }
     },
     filename: (req, file, cb) => {
-        console.log('almost')
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
         cb(null, file.fieldname + '-' + uniqueSuffix)
     }

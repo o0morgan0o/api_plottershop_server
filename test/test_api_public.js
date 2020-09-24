@@ -6,6 +6,8 @@ const app = require('../server')
 let should = chai.should()
 const { expect } = chai
 
+const BASE_URL = 'http://localhost:4444'
+
 
 
 chai.use(chaiHttp)
@@ -31,28 +33,25 @@ describe('testing api routes without need auth', () => {
     })
 
     it('GET unExistent item /api/item/0', (done) => {
-        chai.request(app)
-            .get('/api/item/0')
-            .end((err, res) => {
+        Axios.get(`${BASE_URL}/api/item/0`)
+            .then(res => {
                 expect(res).to.have.status(200)
-                expect(res.text).to.be.equal('Non existing item')
+                expect(res.data).to.be.equal('Non existing item')
                 done()
-            })
+            }).catch(err => done(err))
     })
 
     it('GET on existent item /api/item/:id', (done) => {
-        chai.request(app)
-            .get('/api/items')
-            .end((err, res) => {
-                let id = res.body[0].id
-                chai.request(app)
-                    .get(`/api/item/${id}`)
-                    .end((err, res) => {
+        Axios.get(`${BASE_URL}/api/items`)
+            .then(res => {
+                let id = res.data[0].id
+                Axios.get(`${BASE_URL}/api/item/${id}`)
+                    .then(res => {
                         expect(res).to.have.status(200)
-                        expect(res.body).to.have.property('title')
+                        expect(res.data).to.have.property('title')
                         done()
-                    })
-            })
+                    }).catch(err => done(err))
+            }).catch(err => done(err))
     })
 
     it('GET on nonExisting route', (done) => {
