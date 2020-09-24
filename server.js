@@ -22,49 +22,31 @@ dotenv.config()
 // Connect to Mysql
 const connection = mysql.createConnection({
 
-    database: (process.env.NODE_ENV ? process.env.DB_NAME : process.env.DB_TEST_NAME),
+    database: (process.env.NODE_ENV === 'test') ? process.env.DB_TEST_NAME : process.env.DB_NAME,
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     port: process.env.DB_PORT
 })
-connection.connect()
-// END MYSQL =====================
 
-// Middleware
-// let corsOptions = {
-//     origin: function (origin, cb) {
-//         if (whitelist.indexOf(origin) !== -1 || !origin) {
-//             cb(null, true)
-//         } else {
-//             // cb(new Error('not allowed by CORS'))
-//         }
-//     },
-//     credentials: true
-// }
-// app.use(cors(corsOptions))
-// app.use(cors({
-//     origin: `https://mroze-printings.com`,
-//     credentials: true
-// }))
+
+connection.connect()
 let myCors = function (req, res, next) {
-    const whitelist = ['https://mroze-printings.com', 'https://mroze-printings.com/admin/additem']
+    const whitelist = ['https://mroze-printings.com', 'https://mroze-printings.com/admin/additem', 'https://mroze-printings.com:5555', 'https://mroze-printings.com:5555/additem']
+    console.log('something')
+
     let origin = req.headers.origin
     if (whitelist.indexOf(origin) > -1) {
         res.setHeader('Access-Control-Allow-Origin', origin)
     }
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
     res.setHeader('Access-Control-Allow-Credentials', 'true')
     res.setHeader('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE")
+    res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
+
     next()
 
 }
 app.use(myCors)
-// app.use(cors())
-
-
-
-
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))

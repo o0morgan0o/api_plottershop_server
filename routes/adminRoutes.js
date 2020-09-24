@@ -19,7 +19,9 @@ module.exports = function (app, connection, passport) {
 
 
     app.post('/admin/additem', loggedIn, upload.array('files'), (req, res, next) => { // TODO rajouter login
+        console.log('add item detected')
         let item = req.body
+
         try {
             let files = req.files
             //construction of stringify array
