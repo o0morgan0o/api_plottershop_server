@@ -23,7 +23,7 @@ module.exports = function (app, connection, passport) {
             //construction of stringify array
             const img_main = files[0].filename
             let img_others = []
-            for (let i = 1; i < files.length - 1; i++) {
+            for (let i = 1; i < files.length; i++) {
                 if (files[i]) {
                     img_others.push(files[i].filename)
                 }
@@ -91,24 +91,44 @@ module.exports = function (app, connection, passport) {
     })
 
 
-    app.post('/admin/updateitem', loggedIn, upload.array('files'), (req, res, next) => {
+    app.post('/admin/updateitem', loggedIn, upload.fields([
+        { name: 'file_main', maxCount: 1 },
+        { name: 'file_others', maxCount: 5 },
+    ]), (req, res, next) => {
         //TODO add upload + validation
-        //get data
-        let files = req.files
 
-        const img_main = files[0].filename
-        let img_others = []
-        for (let i = 1; i < files.length - 1; i++) {
-            if (files[i]) {
-                img_others.push(files[i].filename)
-            }
+        let files = req.files
+        let file_main = null
+        let files_others = []
+        try {
+            if (req.files['file_main'][0])
+                file_main = req.files['file_main'][0].filename
+            // TODO if we have this we must delete the old file T
+        } catch (e) { console.log('error in img_main', e) }
+        try {
+            if (req.files['file_others'].length > 0)
+                files_others = req.files['file_others']
         }
+        catch (e) { console.log('error in img_others', e) }
+        console.log('files others', files_others)
+
+        console.log('nexxxxxxxxxxxxx')
+        let img_others = []
+        try {
+            for (let i = 0; i < files_others.length; i++) {
+                if (files_others[i].filename) {
+                    img_others.push(files_others[i].filename)
+                }
+            }
+        } catch (e) { console.log('error in img_others', e) }
         const img_others_json = JSON.stringify(img_others)
         // console.log('upppppppppppppp', req.body, req.params, files.lengt)
         // res.send('ok')
         let item = req.body
+        console.log('item', item)
         // TODO change aloso pictures
         let query = "UPDATE items SET"
+        if (file_main) query += ` img_main = '${file_main}',`
         if (item.title) query += ` title = '${item.title}',`
         if (item.subtitle) query += ` subtitle = '${item.subtitle}',`
         if (item.description_1) query += ` description_1 = '${item.description_1}',`
@@ -134,7 +154,6 @@ module.exports = function (app, connection, passport) {
                 status: resultStatus,
                 warningCount: results.warningCount
             })
-            // res.redirect('/api/items')
         })
         // res.send('ok')
 

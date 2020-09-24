@@ -1,3 +1,4 @@
+
 const assert = require('assert')
 const Axios = require('axios')
 const chai = require('chai')
@@ -32,7 +33,7 @@ let getNewFormData = (
     price = "300",
     sold = "true",
     promotion = "AddItem Promotion",
-    file_main = fs.createReadStream('./test/placeholder.png')
+    // file_main = fs.createReadStream('./test/placeholder.png')
 ) => {
     let tmpFormData = new FormData()
     tmpFormData.append('title', title)
@@ -46,11 +47,15 @@ let getNewFormData = (
     tmpFormData.append('price', price)
     tmpFormData.append('sold', sold)
     tmpFormData.append('promotion', promotion)
-    tmpFormData.append('files', file_main)
     return tmpFormData
 }
 
 
+function getHeaderWithCookie(formData, cookie) {
+    let header = formData.getHeaders()
+    header.Cookie = cookie
+    return header
+}
 
 
 
@@ -68,15 +73,8 @@ describe('testing add delete update item', () => {
         const resLog = await Axios.post(`${BASE_URL}/login`, credentials)
         let cookie = resLog.headers['set-cookie']
         let formDataNewItem = getNewFormData()
-        const resAdd = await Axios.post(`${BASE_URL}/admin/additem`, formDataNewItem,
-            {
-                headers: (function () {
-                    let header = formDataNewItem.getHeaders()
-                    header.Cookie = cookie
-                    return header
-                })()
-            }
-        )
+        formDataNewItem.append('files', fs.createReadStream('./test/placeholder.png'))
+        const resAdd = await Axios.post(`${BASE_URL}/admin/additem`, formDataNewItem, { headers: getHeaderWithCookie(formDataNewItem, cookie) })
         expect(resAdd).to.have.status(200)
         expect(resAdd.data.status).to.be.equal('success')
         expect(Number.parseInt(resAdd.data.id)).to.be.a('number')
@@ -118,39 +116,4 @@ describe('testing add delete update item', () => {
         expect(resDel.data).to.be.equal('You are not authenticated, Please login !')
     })
 
-    it('UPDATE item at POST /admin/updateitem', async function () {
-        // this.timeout(5000)
-        const resLog = await Axios.post(`${BASE_URL}/login`, credentials)
-        const cookie = resLog.headers['set-cookie']
-        const tmpAdd = getNewFormData()
-        const resAdd = await Axios.post(`${BASE_URL}/admin/additem`, tmpAdd, {
-            headers: (function () {
-                let header = tmpAdd.getHeaders()
-                header.Cookie = cookie
-                return header
-            })()
-        })
-        expect(resAdd).to.have.status(200)
-        const insertedId = resAdd.data.id
-        const updateFormData = getNewFormData(title = "Updated title", subtitle = "Updated subtitle")
-        updateFormData.append('id', insertedId)
-        updateFormData.append('files', fs.createReadStream('./test/placeholder.png'))
-        console.log('formdata', updateFormData)
-        const resUpdate = await Axios.post(`${BASE_URL}/admin/updateitem`, updateFormData, {
-            headers: (function () {
-                let header = updateFormData.getHeaders()
-                header.Cookie = cookie
-                return header
-            })()
-        })
-        const resCheck = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
-        expect(resCheck).to.have.status(200)
-        expect(resCheck.data.title).to.be.equal('Updated title')
-        expect(resCheck.data.subtitle).to.be.equal('Updated subtitle')
-        //should check taht the img are the same
-        //make another test to test just if the pictures are changed
-        console.log(resCheck.data)
-
-    })
 })
-

@@ -14,7 +14,18 @@ const storage = multer.diskStorage({
         cb(null, file.fieldname + '-' + uniqueSuffix)
     }
 })
-const upload = multer({ storage: storage })
+
+
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype == 'image/png' || file.mimetype == 'image/jpg' || file.mimetype == 'image/jpeg') {
+        cb(null, true)
+    } else {
+        cb(null, false)
+        return cb(new Error('Only .png, .jpg, or .jpeg format allowed'))
+    }
+}
+const upload = multer({ storage: storage, fileFilter: fileFilter })
+
 
 // TODO : make file validation
 // function fileFilter(req, file, cb) {
