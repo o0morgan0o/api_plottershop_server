@@ -1,8 +1,63 @@
 const jwt = require('jsonwebtoken')
+const util = require('util')
 const upload = require('../fileUpload').upload
 const loggedIn = require('./login')
 const fs = require('fs')
 const path = require('path')
+
+function getFilesFromRequest(reqFiles) {
+    let main = undefined
+    let others = []
+    try {
+        main = reqFiles['file_main'][0].filename
+    } catch (e) {
+        main = undefined
+    }
+    others = reqFiles['file_others']
+    if (others === undefined) others = []
+    console.log('AAAAAAAAAAAAAAAAAAAA return value', main, others)
+    return [main, others]
+
+
+}
+
+function getFilesToRemove(filesToRemove) {
+    let response = []
+    if (filesToRemove === undefined) response = []
+    else response = filesToRemove
+    return response
+}
+
+function concatPreviousAndNewImgOthers(oldItem, newItem) {
+    let temp = JSON.parse(oldItem).concat(newItem)
+    // console.log('concattttttttt', oldItem, newItem, temp)
+    return temp
+}
+function removeImagesInImgOthers(arr, filesToRemove) {
+    let removedArray = []
+    if (filesToRemove === undefined) return [arr, removedArray]
+    if (Array.isArray(filesToRemove)) {
+        let newArr = [...arr]
+        for (let i = 0; i < filesToRemove.length; i++) {
+            let index = newArr.indexOf(filesToRemove[i])
+            if (index !== -1) {
+                removedArray.push(newArr[index])
+                newArr.splice(index, 1)
+            }
+        }
+        return [newArr, removedArray]
+
+    } else {
+        // case where the filesToRemove is not an array but a string
+        let newArr = [...arr]
+        let index = arr.indexOf(filesToRemove)
+        if (index !== -1) {
+            removedArray.push(newArr[index])
+            newArr.splice(index, 1)
+        }
+        return [newArr, removedArray]
+    }
+}
 
 module.exports = function (app, connection, passport) {
 
@@ -95,65 +150,59 @@ module.exports = function (app, connection, passport) {
         { name: 'file_main', maxCount: 1 },
         { name: 'file_others', maxCount: 5 },
     ]), (req, res, next) => {
+        //handle if there is 
         //TODO add upload + validation
-
-        let files = req.files
-        let file_main = null
-        let files_others = []
-        try {
-            if (req.files['file_main'][0])
-                file_main = req.files['file_main'][0].filename
-            // TODO if we have this we must delete the old file T
-        } catch (e) { console.log('error in img_main', e) }
-        try {
-            if (req.files['file_others'].length > 0)
-                files_others = req.files['file_others']
-        }
-        catch (e) { console.log('error in img_others', e) }
-        console.log('files others', files_others)
-
-        console.log('nexxxxxxxxxxxxx')
-        let img_others = []
-        try {
-            for (let i = 0; i < files_others.length; i++) {
-                if (files_others[i].filename) {
-                    img_others.push(files_others[i].filename)
-                }
-            }
-        } catch (e) { console.log('error in img_others', e) }
-        const img_others_json = JSON.stringify(img_others)
-        // console.log('upppppppppppppp', req.body, req.params, files.lengt)
-        // res.send('ok')
+        let [newFile_main, newFile_others] = getFilesFromRequest(req.files)
+        let files_remove = getFilesToRemove(req.body.removeFile)
         let item = req.body
-        console.log('item', item)
-        // TODO change aloso pictures
-        let query = "UPDATE items SET"
-        if (file_main) query += ` img_main = '${file_main}',`
-        if (item.title) query += ` title = '${item.title}',`
-        if (item.subtitle) query += ` subtitle = '${item.subtitle}',`
-        if (item.description_1) query += ` description_1 = '${item.description_1}',`
-        if (item.description_2) query += ` description_2 = '${item.description_2}',`
-        if (item.size) query += ` size = '${item.size}',`
-        if (item.devise) query += ` devise = '${item.devise}',`
-        if (item.viewable) query += ` viewable = ${item.viewable === true},`
-        if (item.sold) query += ` sold = ${item.sold === true},`
-        if (img_others.length > 0) query += ` img_others = '${img_others_json}',`
-        if (item.promotion) query += ` promotion = '${item.promotion}'`
-        query += ` WHERE id = '${item.id}'`
-        console.log(query)
-        let resultStatus = 'unknows'
-
-        connection.query(query, (err, results) => {
-
+        // console.log('item', item)
+        // getItem(connection, item.id,)
+        connection.query(`select * from items where id = '${item.id}'`, (err, results) => {
             if (err) throw err
-            console.log(results)
-            resultStatus = 'success'
-            res.json({
-                id: item.id,
-                affectedRows: results.affectedRows,
-                status: resultStatus,
-                warningCount: results.warningCount
-            })
+            if (results[0]) {
+                const oldItem = results[0]
+                const arrayFileOthers = concatPreviousAndNewImgOthers(oldItem.img_others, newFile_others)
+                let [filteredArrayFileOthers, removedElements] = removeImagesInImgOthers(arrayFileOthers, files_remove)
+                const img_others_json = JSON.stringify(filteredArrayFileOthers)
+
+                console.log('CCCCCCCCCCCC before query', newFile_main, img_others_json,)
+
+
+                // TODO change aloso pictures
+                let query = "UPDATE items SET"
+                if (newFile_main) query += ` img_main = '${newFile_main}',`
+                if (item.title) query += ` title = '${item.title}',`
+                if (item.subtitle) query += ` subtitle = '${item.subtitle}',`
+                if (item.description_1) query += ` description_1 = '${item.description_1}',`
+                if (item.description_2) query += ` description_2 = '${item.description_2}',`
+                if (item.size) query += ` size = '${item.size}',`
+                if (item.devise) query += ` devise = '${item.devise}',`
+                if (item.viewable) query += ` viewable = ${item.viewable === true},`
+                if (item.sold) query += ` sold = ${item.sold === true},`
+                if (img_others_json) query += ` img_others = '${img_others_json}',`
+                if (item.promotion) query += ` promotion = '${item.promotion}'`
+                query += ` WHERE id = '${item.id}'`
+                console.log(query)
+                let resultStatus = 'unknows'
+
+
+
+                connection.query(query, (err, results) => {
+
+                    if (err) throw err
+                    console.log(results)
+                    resultStatus = 'success'
+                    res.json({
+                        id: item.id,
+                        affectedRows: results.affectedRows,
+                        status: resultStatus,
+                        warningCount: results.warningCount
+                    })
+                })
+            }
+            else {
+                console.log('error during reading')
+            }
         })
         // res.send('ok')
 
@@ -179,3 +228,18 @@ module.exports = function (app, connection, passport) {
 
 
 }
+
+// async function getItem(connection, id, cb) {
+//     const query = `select * from items where id='${id}'`
+//     return await.promisify(connection.query(query, (err, results) => {
+//         if (err) throw err
+//         if (results[0]) {
+//             return results[0]
+//         }
+//         else {
+//             console.log('error in getItem')
+//             return 'no result to return'
+
+//         }
+//     })
+// }

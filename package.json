@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "NODE_ENV=test nodemon --exec \"mocha --timeout 2000 --recursive\"",
+    "debug": "NODE_ENV=test node inspect server.js",
     "start": "node server.js",
     "start-dev": "nodemon server.js"
   },

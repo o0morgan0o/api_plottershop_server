@@ -9,56 +9,18 @@ const FormData = require('form-data')
 const path = require('path')
 const fs = require('fs')
 const chaiFiles = require('chai-files')
+const { getNewFormData, getHeaderWithCookie } = require('./helpers/functions')
 
-const BASE_URL = 'http://localhost:4444'
-
+const BASE_URL = process.env.API_TEST_URL
 const credentials = {
-    name: 'root',
-    password: '123456'
+    name: process.env.DB_TEST_USER,
+    password: process.env.DB_TEST_PASSWORD
 }
 
 chai.use(chaiHttp)
 chai.use(chaiFiles)
 
-let getNewFormData = (
-    title = 'AddItem Title',
-    subtitle = 'AddItem SubTitle',
-    description_1 = "AddItem Description_1",
-    description_2 = "AddItem Description_2",
-    material = "AddItem Material",
-    size = "AddItem Size",
-    devise = "AddItem Devise",
-    viewable = "true",
-    price = "300",
-    sold = "true",
-    promotion = "AddItem Promotion",
-    // file_main = fs.createReadStream('./test/placeholder.png')
-) => {
-    let tmpFormData = new FormData()
-    tmpFormData.append('title', title)
-    tmpFormData.append('subtitle', subtitle)
-    tmpFormData.append('description_1', description_1)
-    tmpFormData.append('description_2', description_2)
-    tmpFormData.append('material', material)
-    tmpFormData.append('size', size)
-    tmpFormData.append('devise', devise)
-    tmpFormData.append('viewable', viewable)
-    tmpFormData.append('price', price)
-    tmpFormData.append('sold', sold)
-    tmpFormData.append('promotion', promotion)
-    return tmpFormData
-}
-
-
-function getHeaderWithCookie(formData, cookie) {
-    let header = formData.getHeaders()
-    header.Cookie = cookie
-    return header
-}
-
-
-
-describe('testing add delete update item', () => {
+describe('testing update items', () => {
     before(async () => {
         const resLog = await Axios.post(`${BASE_URL}/login`, credentials)
         let cookie = resLog.headers['set-cookie']
@@ -67,7 +29,7 @@ describe('testing add delete update item', () => {
     })
 
 
-    it('UPDATE item at POST /admin/updateitem', async function () {
+    it('UPDATE title and subtitle at POST /admin/updateitem', async function () {
         // this.timeout(5000)
         const resLog = await Axios.post(`${BASE_URL}/login`, credentials)
         const cookie = resLog.headers['set-cookie']
@@ -96,7 +58,6 @@ describe('testing add delete update item', () => {
         expect(resCheck.data.subtitle).to.be.equal('Updated subtitle')
         expect(resCheck.data.img_main).to.be.equal(imgMainBefore)
         expect(resCheck.data.img_others).to.be.equal(imgOthersBefore)
-        //make another test to test just if the pictures are changed
         console.log(resCheck.data)
 
     })
@@ -127,6 +88,133 @@ describe('testing add delete update item', () => {
         expect(resGetUpdated.data.title).to.be.equal(itemBefore.title)
         expect(resGetUpdated.data.img_others).to.be.equal(itemBefore.img_others)
         expect(resGetUpdated.data.img_main).to.be.not.equal(itemBefore.img_main)
+    })
+
+    it('UPDATE only add img_others at /admin/updateitem', async function () {
+        const resLog = await Axios.post(`${BASE_URL}/login`, credentials)
+        const cookie = resLog.headers['set-cookie']
+        const tmpAdd = getNewFormData()
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        const resAdd = await Axios.post(`${BASE_URL}/admin/additem`, tmpAdd, { headers: getHeaderWithCookie(tmpAdd, cookie) })
+        expect(resAdd).to.have.status(200)
+        const insertedId = resAdd.data.id
+        const resGetAfter = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
+        expect(resGetAfter).to.have.status(200)
+        let itemBefore = resGetAfter.data
+        let imgMainBefore = resGetAfter.data.img_main
+        let imgOthersBefore = resGetAfter.data.img_others
+        expect(JSON.parse(imgOthersBefore).length).to.be.equal(3)
+        const updateFormData = getNewFormData()
+        updateFormData.append('id', insertedId)
+        updateFormData.append('file_others', fs.createReadStream('./test/placeholder.png'))
+        const resUpdate = await Axios.post(`${BASE_URL}/admin/updateitem`, updateFormData, { headers: getHeaderWithCookie(updateFormData, cookie) })
+        expect(resUpdate).to.have.status(200)
+        expect(resUpdate.data.status).to.be.equal('success')
+        const resGetUpdated = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
+        expect(resGetUpdated).to.have.status(200)
+        expect(resGetUpdated.data.title).to.be.equal(itemBefore.title)
+        expect(resGetUpdated.data.img_main).to.be.equal(itemBefore.img_main)
+        expect(resGetUpdated.data.img_others).to.be.not.equal(itemBefore.img_others)
+        expect(JSON.parse(resGetUpdated.data.img_others).length).to.be.equal(4)
+    })
+
+    it(`UPDATE remove 2 images in img_others at /admin/updateitem`, async function () {
+        const resLog = await Axios.post(`${BASE_URL}/login`, credentials)
+        const cookie = resLog.headers['set-cookie']
+        const tmpAdd = getNewFormData()
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        const resAdd = await Axios.post(`${BASE_URL}/admin/additem`, tmpAdd, { headers: getHeaderWithCookie(tmpAdd, cookie) })
+        expect(resAdd).to.have.status(200)
+        const insertedId = resAdd.data.id
+        const resGetAfter = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
+        expect(resGetAfter).to.have.status(200)
+        let itemBefore = resGetAfter.data
+        let imgMainBefore = resGetAfter.data.img_main
+        let imgOthersBefore = resGetAfter.data.img_others
+        expect(JSON.parse(imgOthersBefore).length).to.be.equal(3)
+        const updateFormData = getNewFormData()
+        updateFormData.append('id', insertedId)
+        updateFormData.append('removeFile', JSON.parse(imgOthersBefore)[0])
+        updateFormData.append('removeFile', JSON.parse(imgOthersBefore)[1])
+        const resUpdate = await Axios.post(`${BASE_URL}/admin/updateitem`, updateFormData, { headers: getHeaderWithCookie(updateFormData, cookie) })
+        expect(resUpdate).to.have.status(200)
+        expect(resUpdate.data.status).to.be.equal('success')
+        const resGetUpdated = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
+        expect(resGetUpdated).to.have.status(200)
+        expect(resGetUpdated.data.id).to.be.equal(insertedId)
+        expect(resGetUpdated.data.img_main).to.be.equal(itemBefore.img_main)
+        expect(resGetUpdated.data.img_others).to.be.not.equal(itemBefore.img_others)
+        expect(JSON.parse(resGetUpdated.data.img_others).length).to.be.equal(1)
+    })
+
+    it(`UPDATE remove 1 image in img_others at /admin/updateitem`, async function () {
+        const resLog = await Axios.post(`${BASE_URL}/login`, credentials)
+        const cookie = resLog.headers['set-cookie']
+        const tmpAdd = getNewFormData()
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        const resAdd = await Axios.post(`${BASE_URL}/admin/additem`, tmpAdd, { headers: getHeaderWithCookie(tmpAdd, cookie) })
+        expect(resAdd).to.have.status(200)
+        const insertedId = resAdd.data.id
+        const resGetAfter = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
+        expect(resGetAfter).to.have.status(200)
+        let itemBefore = resGetAfter.data
+        let imgMainBefore = resGetAfter.data.img_main
+        let imgOthersBefore = resGetAfter.data.img_others
+        expect(JSON.parse(imgOthersBefore).length).to.be.equal(3)
+        const updateFormData = getNewFormData()
+        updateFormData.append('id', insertedId)
+        updateFormData.append('removeFile', JSON.parse(imgOthersBefore)[1])
+        const resUpdate = await Axios.post(`${BASE_URL}/admin/updateitem`, updateFormData, { headers: getHeaderWithCookie(updateFormData, cookie) })
+        expect(resUpdate).to.have.status(200)
+        expect(resUpdate.data.status).to.be.equal('success')
+        const resGetUpdated = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
+        expect(resGetUpdated).to.have.status(200)
+        expect(resGetUpdated.data.id).to.be.equal(insertedId)
+        expect(resGetUpdated.data.img_main).to.be.equal(itemBefore.img_main)
+        expect(resGetUpdated.data.img_others).to.be.not.equal(itemBefore.img_others)
+        expect(JSON.parse(resGetUpdated.data.img_others).length).to.be.equal(2)
+    })
+
+    it(`UPDATE remove all images in img_others and at /admin/updateitem`, async function () {
+        const resLog = await Axios.post(`${BASE_URL}/login`, credentials)
+        const cookie = resLog.headers['set-cookie']
+        const tmpAdd = getNewFormData()
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        tmpAdd.append('files', fs.createReadStream('./test/placeholder.png'))
+        const resAdd = await Axios.post(`${BASE_URL}/admin/additem`, tmpAdd, { headers: getHeaderWithCookie(tmpAdd, cookie) })
+        expect(resAdd).to.have.status(200)
+        const insertedId = resAdd.data.id
+        const resGetAfter = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
+        expect(resGetAfter).to.have.status(200)
+        let itemBefore = resGetAfter.data
+        let imgMainBefore = resGetAfter.data.img_main
+        let imgOthersBefore = resGetAfter.data.img_others
+        expect(JSON.parse(imgOthersBefore).length).to.be.equal(3)
+        const updateFormData = getNewFormData()
+        updateFormData.append('id', insertedId)
+        updateFormData.append('removeFile', JSON.parse(imgOthersBefore)[0])
+        updateFormData.append('removeFile', JSON.parse(imgOthersBefore)[1])
+        updateFormData.append('removeFile', JSON.parse(imgOthersBefore)[2])
+        const resUpdate = await Axios.post(`${BASE_URL}/admin/updateitem`, updateFormData, { headers: getHeaderWithCookie(updateFormData, cookie) })
+        expect(resUpdate).to.have.status(200)
+        expect(resUpdate.data.status).to.be.equal('success')
+        const resGetUpdated = await Axios.get(`${BASE_URL}/api/item/${insertedId}`)
+        expect(resGetUpdated).to.have.status(200)
+        expect(resGetUpdated.data.id).to.be.equal(insertedId)
+        expect(resGetUpdated.data.img_main).to.be.equal(itemBefore.img_main)
+        expect(resGetUpdated.data.img_others).to.be.not.equal(itemBefore.img_others)
+        expect(JSON.parse(resGetUpdated.data.img_others).length).to.be.equal(0)
     })
 
 })
