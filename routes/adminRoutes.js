@@ -94,20 +94,30 @@ module.exports = function (app, connection, passport) {
     app.post('/admin/updateitem', loggedIn, upload.array('files'), (req, res, next) => {
         //TODO add upload + validation
         //get data
-        console.log('upppppppppppppp', req.body, req.params)
+        let files = req.files
 
+        const img_main = files[0].filename
+        let img_others = []
+        for (let i = 1; i < files.length - 1; i++) {
+            if (files[i]) {
+                img_others.push(files[i].filename)
+            }
+        }
+        const img_others_json = JSON.stringify(img_others)
+        // console.log('upppppppppppppp', req.body, req.params, files.lengt)
         // res.send('ok')
         let item = req.body
         // TODO change aloso pictures
         let query = "UPDATE items SET"
         if (item.title) query += ` title = '${item.title}',`
-        if (item.sutbitle) query += ` subtitle = '${item.subtitle}',`
+        if (item.subtitle) query += ` subtitle = '${item.subtitle}',`
         if (item.description_1) query += ` description_1 = '${item.description_1}',`
         if (item.description_2) query += ` description_2 = '${item.description_2}',`
         if (item.size) query += ` size = '${item.size}',`
         if (item.devise) query += ` devise = '${item.devise}',`
         if (item.viewable) query += ` viewable = ${item.viewable === true},`
         if (item.sold) query += ` sold = ${item.sold === true},`
+        if (img_others.length > 0) query += ` img_others = '${img_others_json}',`
         if (item.promotion) query += ` promotion = '${item.promotion}'`
         query += ` WHERE id = '${item.id}'`
         console.log(query)
