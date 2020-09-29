@@ -1,6 +1,7 @@
 module.exports = function (app) {
     app.get('*', (req, res) => {
-        res.send('unknown route')
+        console.log(JSON.stringify(req.headers))
+        res.send(`unknown route ${req.originalUrl}`)
     })
 
 

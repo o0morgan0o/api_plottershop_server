@@ -2,7 +2,7 @@
 module.exports = function (app, connection) {
 
 
-    app.get('/api/items', (req, res) => {
+    app.get('/api/v1/items', (req, res) => {
         // console.log("call detected")
         //public route should be accessible for anybody 
         connection.query('select * from items', (err, results) => {
@@ -11,7 +11,7 @@ module.exports = function (app, connection) {
         })
     })
 
-    app.get('/api/item/:id', (req, res) => {
+    app.get('/api/v1/item/:id', (req, res) => {
         connection.query("select * from items where id='" + req.params.id + "'", (err, results) => {
             if (err) throw err
             if (results[0])

@@ -33,7 +33,7 @@ const connection = mysql.createConnection({
 connection.connect()
 let myCors = function (req, res, next) {
     const whitelist = ['https://mroze-printings.com', 'https://mroze-printings.com/admin/additem', 'https://mroze-printings.com:5555', 'https://mroze-printings.com:5555/additem']
-    console.log('something')
+    console.log('something', req.originalUrl)
 
     let origin = req.headers.origin
     if (whitelist.indexOf(origin) > -1) {
@@ -46,6 +46,7 @@ let myCors = function (req, res, next) {
     next()
 
 }
+
 app.use(myCors)
 
 app.use(bodyParser.json())
@@ -61,7 +62,7 @@ app.use((req, res, next) => {
     next()
 })
 app.use(flash())
-app.use(express.static('uploads'))
+// app.use(express.static('uploads'))
 
 // -------------------------
 // Passport
@@ -84,6 +85,6 @@ require('./routes/unknownRoute')(app)
 
 const port = process.env.PORT || 4444
 // app.listen(port, process.env.SERVER_IP, () => console.log(`listening on port ${port}`))
-app.listen(port, () => console.log(`listening on local host, port ${port}`))
+app.listen(port, `127.0.0.1`, () => console.log(`listening on local host, port ${port}`))
 
 module.exports = app
