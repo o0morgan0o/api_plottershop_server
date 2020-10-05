@@ -3,7 +3,7 @@ const loggedIn = require('./login')
 
 module.exports = function (app, connection, passport) {
 
-    app.post('/login', (req, res, next) => {
+    app.post('/api/v1/login', (req, res, next) => {
         passport.authenticate('local-login', function (err, user, info) {
 
             if (err) throw err
@@ -24,12 +24,12 @@ module.exports = function (app, connection, passport) {
         })(req, res, next)
     })
 
-    app.get('/user', loggedIn, (req, res) => {
+    app.get('/api/v1/user', loggedIn, (req, res) => {
         // console.log('receiving user request')
         res.send(req.user)
     })
 
-    app.get('/logout', (req, res) => {
+    app.get('/api/v1/logout', (req, res) => {
         // console.log('should end sesssion and redirect')
         req.logout()
         // res.redirect('/')

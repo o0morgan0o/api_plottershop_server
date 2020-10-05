@@ -6,7 +6,7 @@ const app = require('../server')
 let should = chai.should()
 const { expect } = chai
 
-const BASE_URL = 'http://localhost:4444'
+const BASE_URL = 'https://mroze-printings.com'
 
 
 
@@ -23,7 +23,7 @@ describe('null test', () => {
 describe('testing api routes without need auth', () => {
     it('GET get all items at /api/items', (done) => {
         chai.request(app)
-            .get('/api/items')
+            .get('/api/v1/items')
             .end((err, res) => {
                 expect(res).to.have.status(200)
                 expect(res.body.length).to.be.greaterThan(0)
@@ -33,7 +33,7 @@ describe('testing api routes without need auth', () => {
     })
 
     it('GET unExistent item /api/item/0', (done) => {
-        Axios.get(`${BASE_URL}/api/item/0`)
+        Axios.get(`${BASE_URL}/api/v1/item/0`)
             .then(res => {
                 expect(res).to.have.status(200)
                 expect(res.data).to.be.equal('Non existing item')
@@ -42,10 +42,10 @@ describe('testing api routes without need auth', () => {
     })
 
     it('GET on existent item /api/item/:id', (done) => {
-        Axios.get(`${BASE_URL}/api/items`)
+        Axios.get(`${BASE_URL}/api/v1/items`)
             .then(res => {
                 let id = res.data[0].id
-                Axios.get(`${BASE_URL}/api/item/${id}`)
+                Axios.get(`${BASE_URL}/api/v1/item/${id}`)
                     .then(res => {
                         expect(res).to.have.status(200)
                         expect(res.data).to.have.property('title')
@@ -56,17 +56,17 @@ describe('testing api routes without need auth', () => {
 
     it('GET on nonExisting route', (done) => {
         chai.request(app)
-            .get('/api/nothing')
+            .get('/api/v1/nothing')
             .end((err, res) => {
                 expect(res).to.have.status(200)
-                expect(res.text).to.be.equal('unknown route')
+                expect(res.text).to.be.equal('unknown route /api/v1/nothing')
                 done()
             })
     })
 
     it('GET without being identified', (done) => {
         chai.request(app)
-            .get('/user')
+            .get('/api/v1/user')
             .end((err, res) => {
                 expect(res).to.have.status(200)
                 expect(res.text).to.be.equal('You are not authenticated, Please login !')

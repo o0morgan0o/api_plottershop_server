@@ -5,7 +5,7 @@ module.exports = {
         let main = undefined
         let others = []
         try {
-            main = reqFiles['file_main'][0].filename
+            main = reqFiles['file_main'][0]
         } catch (e) {
             main = undefined
         }
