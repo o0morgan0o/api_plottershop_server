@@ -37,9 +37,9 @@ module.exports = function (app, connection, passport) {
                 }
             }
             const img_others_json = JSON.stringify(img_others)
-            const query = `insert into items( title, subtitle,description_1, description_2,img_main, img_others, size, devise, viewable, sold, promotion) 
+            const query = `insert into items( title, subtitle,description_1, description_2,img_main, img_others, size, devise, price, material, viewable, sold, promotion) 
             VALUES ('${item.title}', '${item.subtitle}','${item.description_1}', '${item.description_2}','${img_main}', '${img_others_json}',
-            '${item.size}', '${item.devise}' , ${item.viewable === 'true' ? true : false} , ${item.sold === 'true' ? true : false}, '${item.promotion}')`
+            '${item.size}', '${item.devise}' , '${String(item.price)}' , '${item.material}' , ${item.viewable === 'true' ? true : false} , ${item.sold === 'true' ? true : false}, '${item.promotion}')`
             connection.query(query, (err, results) => {
                 let resultStatus = 'unknown'
                 if (err) throw err
